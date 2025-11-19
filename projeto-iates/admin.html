@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Luxo - Admin</title>
+    <link rel="shortcut icon" href="images/barco2.png" type="image/x-icon" />
+    <link rel="stylesheet" href="css/default.css" />
+  </head>
+
+  <body>
+    <div class="page">
+    <header>
+      <div id="title">
+        <img src="images/barco1.png" alt="ícone de barco" />
+        <div class="headtitle">
+          <h1>Luxo</h1>
+          <h2>Aluguel de iates</h2>
+        </div>
+      </div>
+
+      <nav>
+        <ul class="navmenu">
+          <li><a href="index.html">Página inicial</a></li>
+          <li><a href="aluguel.html">Aluguel de iates</a></li>
+          <li><a href="destinos.html">Destinos</a></li>
+          <li><a href="tripulacao.html">Tripulação</a></li>
+          <li><a href="contato.html">Contato</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <div class="pagtitle">
+        <div class="bgtitle"></div>
+        <h2>Área administrativa</h2>
+      </div>
+
+      <form id="formLogin">
+        <div class="entry">
+          <label for="email">E-mail</label>
+          <input type="email" id="email" />
+        </div>
+
+        <div class="entry">
+          <label for="senha">Senha</label>
+          <input type="password" id="senha" />
+        </div>
+
+        <div class="entry">
+          <div id="loginError" style="color: #b00020; margin-top:8px; display:none;"></div>
+        </div>
+
+        <div class="buttons">
+          <button class="button" id="btnLogin">Entrar</button>
+        </div>
+      </form>
+    </main>
+    </div>
+
+    <footer>
+      <p>© 2023 por Luxo aluguel de iates</p>
+    </footer>
+
+    <!-- Scripts: jQuery (required by api.js) e a API -->
+    <script src="js/jquery-3.6.4.min.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+      (function () {
+        var btn = document.getElementById('btnLogin');
+        var errorBox = document.getElementById('loginError');
+        if (!btn) return;
+
+        function showError(msg) {
+          errorBox.textContent = msg;
+          errorBox.style.display = 'block';
+        }
+
+        function clearError() {
+          errorBox.textContent = '';
+          errorBox.style.display = 'none';
+        }
+
+        btn.addEventListener('click', function (e) {
+          e.preventDefault();
+          clearError();
+
+          var emailVal = (document.getElementById('email') || {}).value || '';
+          var senhaVal = (document.getElementById('senha') || {}).value || '';
+
+          var objLoginSenha = {
+            email: emailVal,
+            senha: senhaVal
+          };
+
+          if (typeof validarUsuario === 'function') {
+            try {
+              var ok = validarUsuario(objLoginSenha);
+              if (ok) {
+                // redireciona para a página de mensagens
+                window.location.href = 'mensagens.html';
+              } else {
+                showError('E-mail e Senha inválidos');
+              }
+            } catch (ex) {
+              console.error('Erro ao validar usuário', ex);
+              showError('Ocorreu um erro na validação. Tente novamente.');
+            }
+          } else {
+            console.error('Função validarUsuario não encontrada.');
+            showError('O sistema de autenticação não está disponível.');
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

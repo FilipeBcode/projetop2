@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Luxo - Mensagens</title>
+    <link rel="shortcut icon" href="images/barco2.png" type="image/x-icon" />
+    <link rel="stylesheet" href="css/default.css" />
+  </head>
+
+  <body>
+    <div class="page">
+    <header>
+      <div id="title">
+        <img src="images/barco1.png" alt="ícone de barco" />
+        <div class="headtitle">
+          <h1>Luxo</h1>
+          <h2>Aluguel de iates</h2>
+        </div>
+      </div>
+
+      <nav>
+        <ul class="navmenu">
+          <li><a href="index.html">Página inicial</a></li>
+          <li><a href="aluguel.html">Aluguel de iates</a></li>
+          <li><a href="destinos.html">Destinos</a></li>
+          <li><a href="tripulacao.html">Tripulação</a></li>
+          <li><a href="contato.html">Contato</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <div class="pagtitle">
+        <div class="bgtitle"></div>
+        <h2>Mensagens recebidas</h2>
+      </div>
+
+      <div id="mensagensContainer">
+        <p id="mensagensInfo">Carregando mensagens...</p>
+        <div id="mensagensList"></div>
+      </div>
+    </main>
+    </div>
+
+    <footer>
+      <p>© 2023 por Luxo aluguel de iates</p>
+    </footer>
+
+    <script src="js/jquery-3.6.4.min.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+      (function () {
+        var info = document.getElementById('mensagensInfo');
+        var list = document.getElementById('mensagensList');
+
+        // Utilitário para escapar HTML
+        function escapeHtml(str) {
+          if (!str) return '';
+          return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+        }
+
+        // Gera um ID único para cada mensagem (pode ser pelo texto, email e nome)
+        function getMsgId(msg) {
+          // Se houver um campo id, use, senão gere um hash simples
+          if (msg.id) return String(msg.id);
+          return btoa(unescape(encodeURIComponent((msg.nome||'')+':' + (msg.email||'')+':' + (msg.mensagem||''))));
+        }
+
+        // Recupera do localStorage os IDs das mensagens visualizadas
+        function getVisualizadas() {
+          var v = localStorage.getItem('mensagensVisualizadas');
+          if (!v) return [];
+          try { return JSON.parse(v); } catch { return []; }
+        }
+
+        // Salva no localStorage os IDs das mensagens visualizadas
+        function setVisualizadas(arr) {
+          localStorage.setItem('mensagensVisualizadas', JSON.stringify(arr));
+        }
+
+        // Renderiza a tabela de mensagens
+        function renderTabela(msgs) {
+          list.innerHTML = '';
+          if (!msgs || msgs.length === 0) {
+            list.innerHTML = '<p>Nenhuma mensagem encontrada.</p>';
+            return;
+          }
+          var visualizadas = getVisualizadas();
+          var table = document.createElement('table');
+          table.className = 'tabela-mensagens';
+          var thead = document.createElement('thead');
+          thead.innerHTML = '<tr><th>Nome</th><th>E-mail</th><th>Mensagem</th><th colspan="2">Ações</th></tr>';
+          table.appendChild(thead);
+          var tbody = document.createElement('tbody');
+          // Carregar mensagens locais para exclusão
+          var msgsLocais = JSON.parse(localStorage.getItem('mensagensExcluidas') || '[]');
+          msgs.forEach(function(m) {
+            var id = getMsgId(m);
+            // Se estiver excluída localmente, não exibe
+            if (msgsLocais.includes(id)) return;
+            var visualizada = visualizadas.includes(id);
+            var tr = document.createElement('tr');
+            tr.className = visualizada ? 'visualizada' : 'nao-visualizada';
+            // Aplica negrito se não visualizada
+            var style = visualizada ? '' : 'font-weight:bold;';
+            tr.innerHTML =
+              '<td style="'+style+'">' + escapeHtml(m.nome||'') + '</td>' +
+              '<td style="'+style+'">' + escapeHtml(m.email||'') + '</td>' +
+              '<td style="'+style+'">' + escapeHtml(m.mensagem||'') + '</td>' +
+              '<td><button data-id="'+id+'" class="btn-visualizar">Mensagem Visualizada</button></td>'+
+              '<td><button data-id="'+id+'" class="btn-excluir">Excluir Mensagem</button></td>';
+            tbody.appendChild(tr);
+          });
+          table.appendChild(tbody);
+          list.appendChild(table);
+
+          // Adiciona evento para marcar como visualizada
+          var btnsVis = list.querySelectorAll('.btn-visualizar');
+          btnsVis.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+              var id = btn.getAttribute('data-id');
+              if (confirm('Deseja marcar esta mensagem como visualizada?')) {
+                var visualizadas = getVisualizadas();
+                if (!visualizadas.includes(id)) {
+                  visualizadas.push(id);
+                  setVisualizadas(visualizadas);
+                  atualizar();
+                }
+              }
+            });
+          });
+
+          // Adiciona evento para excluir mensagem
+          var btnsExc = list.querySelectorAll('.btn-excluir');
+          btnsExc.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+              var id = btn.getAttribute('data-id');
+              if (confirm('Tem certeza que deseja excluir esta mensagem?')) {
+                // Excluir localmente (poderia ser via API se disponível)
+                var excluidas = JSON.parse(localStorage.getItem('mensagensExcluidas') || '[]');
+                if (!excluidas.includes(id)) {
+                  excluidas.push(id);
+                  localStorage.setItem('mensagensExcluidas', JSON.stringify(excluidas));
+                  atualizar();
+                }
+              }
+            });
+          });
+        }
+
+        // Atualiza a lista de mensagens
+        function atualizar() {
+          if (typeof obterMensagens === 'function') {
+            try {
+              var msgs = obterMensagens();
+              info.style.display = 'none';
+              renderTabela(msgs);
+            } catch (ex) {
+              console.error('Erro ao obter mensagens', ex);
+              info.textContent = 'Erro ao carregar mensagens.';
+            }
+          } else {
+            info.textContent = 'Função obterMensagens não disponível.';
+          }
+        }
+
+        // Atualiza ao carregar a página
+        atualizar();
+
+        // Atualiza a cada 10 segundos para pegar novas mensagens
+        setInterval(atualizar, 10000);
+      })();
+    </script>
+  </body>
+</html>
